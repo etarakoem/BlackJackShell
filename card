@@ -1,0 +1,530 @@
+#!/bin/bash
+count=0
+testRun=0
+top="┌───┐"
+bot="└───┘"
+currentIndex=0
+playerHand=()
+playerName="Anonymous"
+
+deck=( $(seq 0 52)  )
+card()
+{
+ if [[ $# -ne 1 || $1 -gt 51 || $1 -lt 0 ]]
+  then
+   echo "Usage: card <random number between 0 to 51"
+   return 0
+ fi
+
+ value=$(($1%13))
+ base=$(($1/13))
+ case $base in
+  0)
+   suite="Clubs"
+  ;;
+
+  1)
+   suite="Spades"
+  ;;
+
+  2)
+   suite="Hearts"
+  ;;
+
+  3)
+   suite="Diamonds"
+  ;;
+ esac
+
+ case $value in
+  [0-8]) val=$((value+2));;
+  9) val="Ace";;
+  10) val="Jack";;
+  11) val="Queen";;
+  12) val="King";;
+ esac
+
+ result="$val of $suite"
+ echo $result
+ return 1
+}
+
+test()
+{
+ if [[ $? -eq $1 ]]
+  then
+   ((count++))
+ fi
+ ((testRun++))
+ echo "Case correct: $count/$testRun"
+}
+
+illegalCheck()
+{
+ card 52
+ test 0
+ card -1
+ test 0
+}
+
+#illegalCheck
+
+testCard()
+{
+ for i in {0..51}
+ do
+  cardSingle $i
+ done
+}
+
+cardIcon()
+{
+ case $(($1/13)) in
+  0)
+   suite="♣"
+  ;;
+
+  1)
+   suite="♠"
+  ;;
+
+  2)
+   suite="♦"
+  ;;
+
+  3)
+   suite="♥"
+  ;;
+ esac
+}
+cardHead()
+{
+ case $(($1%13)) in
+  [0-7]) val=" $(($(($1%13))+2))";;
+  8) val=10;;
+  9) val=" A";;
+  10) val=" J";;
+  11) val=" Q";;
+  12) val=" K";;
+ esac
+ 
+}
+
+cardRender()
+{
+ cardHead $1
+ cardIcon $1
+ echo "$val of $suite"
+}
+
+cardSingle()
+{
+ cardHead $1
+ cardIcon $1
+ echo "$top"
+ echo  "|$val$suite |"
+ echo "$bot"
+}
+
+cardTopHand()
+{
+ i=0
+ cardTop=""
+ while [ $i -lt $# ];  
+ do
+  temp=$cardTop
+  cardTop="$temp $top"
+  ((i++)) 
+  done
+}
+
+cardBotHand()
+{
+ i=0 
+ cardBot=""
+ while [ $i -lt $# ];  
+ do
+  temp=$cardBot
+  cardBot="$temp $bot"
+  ((i++)) 
+  done
+}
+
+cardValHand()
+{
+ cardVal=""
+ for i in "$@" 
+ do
+  cardHead $i
+  cardIcon $i
+  temp=$cardVal
+  cardVal="$temp |$val$suite|"
+ done
+}
+
+# Render function according to which card on hand
+cardOnHand() {
+ cardTopHand $@
+ cardBotHand $@
+ cardValHand $@
+ echo $cardTop
+ echo $cardVal
+ echo $cardBot
+}
+
+toCardValue()
+{
+ temp=$(($1%13))
+ case $temp in
+  [0-8]) cardToValue=$(($temp+2));;
+  9) cardToValue=1;;
+  10|11|12) cardToValue=10;;
+  *) ;;
+ esac
+}
+
+handSum() {
+ handSum=0
+ for i in "$@"
+ do
+  toCardValue $i
+  handSum=$(($handSum + cardToValue))
+ done
+}
+
+cardExist() {
+ for i in "${HAND[@]}"
+ do
+  if [[ $i -eq  $1 ]] 
+   then
+   return 0
+  fi
+ done
+ return 1
+}
+
+makeDeck() 
+{
+ HAND=()
+ for i in {1..10}
+  do 
+  aCard=$((RANDOM%52))
+  while cardExist $aCard 
+  do
+   aCard=$((RANDOM%52))
+  done
+  HAND+=("$aCard") 
+ done
+}
+
+preGame() 
+{
+ echo "Welcome to Bash BlackJack"
+ read -p "Your name is: " name
+ case $name in
+  "");;
+  *) playerName=name;;
+ esac
+ 
+ balance=100
+ echo "Your starting deposit is: $balance "
+ #read balance
+ showPlayer $playerName $balance
+}
+
+showPlayer() 
+{
+ echo "=======PLAYER======="
+ echo "Player name: $1"
+ echo "Player balance: \$$2"
+ echo "=======++++++======="
+}
+
+getCard()
+{
+ echo "next card: ${HAND[$currentIndex]} "
+ playerHand+=(${HAND[$currentIndex]})
+ currentIndex=$((currentIndex+1))
+}
+
+pull()
+{
+ hold=0
+ read -p "Pull next card? (enter n to keep your hand, any key as yes) " input
+ case "$input" in
+ [nN]) 
+  echo "Stop pulling"
+  hold=1
+  return 1
+ ;;
+ *) 
+ echo "Pull"
+ getCard
+ return 0
+ ;;
+ esac
+}
+
+cardIsAce() {
+  if [[ $(($1%13)) -eq 9 ]]
+   then
+    return 0
+  fi
+  return 1
+}
+
+cardIsTen() {
+  if [[ $(($1%13)) -gt 9 ]]
+   then
+    return 0
+  fi
+  return 1
+}
+
+houseBlackJackCheck(){
+  if [[ ${#houseHand[@]} -eq 2 ]]
+   then
+    while cardIsAce ${houseHand[0]} && cardIsTen ${houseHand[1]}
+    do
+     return 0
+    done
+
+    while cardIsAce ${houseHand[1]} && cardIsTen ${houseHand[0]}
+    do
+     return 0
+    done
+
+  fi
+   return 1
+}
+
+blackJackCheck() {
+  if [[ ${#playerHand[@]} -eq 2 ]]
+   then
+    while cardIsAce ${playerHand[0]} && cardIsTen ${playerHand[1]}
+    do
+     return 0
+    done
+
+    while cardIsAce ${playerHand[1]} && cardIsTen ${playerHand[0]}
+    do
+     return 0
+    done
+
+  fi
+   return 1
+}
+
+betPrompt() {
+  echo "Bet options:"
+  echo "a) \$10"
+  echo "s) \$1"
+  echo "d) \$2"
+  echo "f) \$5"
+  echo "q) Done"
+  read -p "How much do you wanna bet? " input
+  case "$input" in 
+    [aA])
+    bet=$(($bet+10))
+    ;;
+    [sS])
+    bet=$(($bet+1))
+    ;;
+    [dD])
+    bet=$(($bet+2))
+    ;;
+    [fF])
+    bet=$(($bet+5))
+    ;;
+    [qQ])
+    settle=1
+    ;;
+    *)
+    bet=$bet
+    ;;
+  esac
+}
+
+handSumValue(){
+  sum=0
+  for i in "${playerHand[@]}"
+  do
+   toCardValue $(($i%13))
+   sum=$(($sum + $cardToValue))
+  done
+}
+
+checkWithHouse(){
+  houseHand=()
+  houseSum=0
+  check=0
+  housePull=0
+  while [[ check -lt 1 && housePull -lt 5 ]]
+  do
+  #  echo "Next card: ${HAND[$currentIndex]}"
+  #  echo "Current index: $currentIndex"
+  #  cardSingle ${HAND[$currentIndex]}
+    toCardValue "${HAND[$currentIndex]}"
+    futureVal=$(($houseSum + $cardToValue))
+    if [[ $futureVal -le 21 && $houseSum -gt 15 ]]
+    then 
+    # echo "House value currently: $houseSum"
+    # echo "House value if pulled: $futureVal"
+    houseSum=$(($houseSum + $cardToValue))
+    houseHand+=(${HAND[$currentIndex]})
+    currentIndex=$(($currentIndex+1))
+    housePull=$(($housePull+1))
+    elif [[ $houseSum -le 15 ]]
+    then
+      # echo "***Force Pull"
+      # echo "House value currently: $houseSum"
+      # echo "House value if pulled: $futureVal"
+      houseSum=$(($houseSum + $cardToValue))
+      houseHand+=(${HAND[$currentIndex]})
+      currentIndex=$(($currentIndex+1))
+      housePull=$(($housePull+1))
+    else
+    # echo "House value currently: $houseSum"
+    # echo "Stop pulling"
+    check=1
+    fi
+  done
+  echo "House value: $houseSum"
+  echo "====== House hand ====="
+  cardOnHand "${houseHand[@]}"
+}
+
+#Only call after 5 pull
+fiveCard(){
+  handSumValue
+  if [[ $sum -le 21 && ${#playerHand[@]} -eq 5 ]]
+  then
+   winFive=1
+  fi
+}
+
+winCheck(){
+  handSumValue
+  echo "Your value: $sum"
+  checkWithHouse
+  if [[ sum -le 21 && sum -gt houseSum || houseSum -gt 21 ]]
+  then
+   echo "Win by not burst, beat the House, and/or House burst"
+   win=1
+  elif [[ sum -le 21 && sum -eq houseSum ]]
+  then
+   echo "Draw by equal with house"
+   win=2
+  elif [[ sum -gt 21 && houseSum -gt 21 ]]
+  then
+   echo "Draw by same burst"
+   win=2
+  else
+   echo "Lose by burst, or lose to house"
+   win=0
+  fi
+}
+
+play()
+{
+  # Bet ammount check
+ settle=0
+ bet=0
+ while [[ $settle -eq 0 ]]
+ do
+  betPrompt
+  if [[ $bet -gt $balance ]]
+  then
+   bet=$balance
+   settle=1
+  fi
+  echo "Bet total: $bet"
+ done
+
+ balance=$(($balance-$bet))
+
+ winFive=0
+ hold=0
+ BJWin=0
+
+ #initialize deck
+ makeDeck
+
+ # Get the first 2 card for player
+ getCard
+ getCard
+
+ # To test player hand
+#  playerHand=("22" "12")
+ showHand
+#  echo "Deck: ${HAND[@]}"
+#  cardOnHand "${HAND[@]}"
+
+# Check for BlackJackCheck on player hand
+ if  ( blackJackCheck == 0 )
+ then
+  echo "Black Jack Wins!"
+  BJWin=1
+ fi
+ hold=0
+
+ while [[ $hold -lt 1 && $BJWin -ne 1 ]] 
+ do
+  if [[ ${#playerHand[@]} -eq 5 ]]
+  then
+   fiveCard
+   hold=1
+   break
+  fi
+  read -p "Pull next card? (enter n to keep your hand, any key as yes) " input
+  case "$input" in
+  [nNqQ]) 
+    echo "Stop pulling"
+    hold=1
+  ;;
+  *) 
+  echo "Pull"
+  getCard
+  showHand
+  ;;
+  esac
+ done
+
+ gameResult
+}
+
+gameResult()
+{
+ winCheck
+ if [[ $win -eq 1 ]]
+ then
+  echo " You Win! "
+  balance=$(($balance + $bet*2))
+ elif [[ $win -eq 2 ]]
+ then
+  echo "Draw."
+  balance=$(($balance + $bet))
+ else
+ echo "You lose"
+ fi
+
+ showPlayer $playerName $balance
+}
+
+showHand() {
+ echo "===== Your hand ====="
+#  echo "${playerHand[@]}"
+ cardOnHand "${playerHand[@]}"
+}
+
+game(){
+ preGame
+ play
+ read -p "Try again? Enter q to quit, anything to try again " input
+ case "$input" in
+  [qQ]) exit ;;
+  *) play ;;
+ esac
+}
+
+game
