@@ -229,7 +229,7 @@ preGame()
  balance=100
  echo "Your starting deposit is: $balance "
  #read balance
- showPlayer $playerName $balance
+#  showPlayer $playerName $balance
 }
 
 showPlayer() 
@@ -242,7 +242,6 @@ showPlayer()
 
 getCard()
 {
- echo "next card: ${HAND[$currentIndex]} "
  playerHand+=(${HAND[$currentIndex]})
  currentIndex=$((currentIndex+1))
 }
@@ -316,6 +315,8 @@ blackJackCheck() {
 }
 
 betPrompt() {
+  showPlayer $playerName $balance
+  echo "Bet total: $bet"
   echo "Bet options:"
   echo "a) \$10"
   echo "s) \$1"
