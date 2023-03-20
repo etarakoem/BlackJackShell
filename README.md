@@ -15,4 +15,5 @@ Enjoy~
 Struggle? Follow this clip:
 
 
-![tutorial](https://user-images.githubusercontent.com/50989367/226228475-1b9f5892-d124-449d-9bb5-15b1037ffc9c.mp4)
+https://user-images.githubusercontent.com/50989367/226228475-1b9f5892-d124-449d-9bb5-15b1037ffc9c.mp4
+
