@@ -404,6 +404,41 @@ fiveCard(){
   fi
 }
 
+# Check if sum of hand more than 21. return 1 if true. return 0 if false
+loseCheck(){
+ handSumValue
+ if [[ $sum -gt 21 ]]
+  then
+   true
+ fi
+ false
+}
+
+# Takes 2 argument, $1 will be player's hand Sum and $2 will be House sum
+# Return 1 if win. 0 if not
+legalWin(){
+
+}
+
+# Takes 2 argument, $1 will be player's hand Sum and $2 will be House sum
+# Return 1 if win. 0 if not
+legalDraw(){
+  handSumValue
+  houseSum
+}
+
+# Check for winning condition. Did not include ranking of cards.
+# If bust, check for draw 
+# If House bust, draw.
+# If House legal win, lose
+# If not lose:
+## Check for Special win:
+### If 2 card, check for BlackJack
+#### Check if house also BlackJack. Draw if so
+### If 5 card, check for Charlie Win on 5
+#### Check if house also Charlie. Draw if so
+#### For now, Charlie beat BlackJack
+
 winCheck(){
   handSumValue
   echo "Your value: $sum"
@@ -426,11 +461,24 @@ winCheck(){
   fi
 }
 
+
+variableReset(){
+  winFive=0
+  hold=0
+  BJWin=0
+  settle=0
+  bet=0
+  currentIndex=0
+  win=0
+  HAND=()
+  playerHand=()
+  houseHand=()
+}
+
 play()
 {
+  variableReset
   # Bet ammount check
- settle=0
- bet=0
  while [[ $settle -eq 0 ]]
  do
   betPrompt
@@ -443,10 +491,6 @@ play()
  done
 
  balance=$(($balance-$bet))
-
- winFive=0
- hold=0
- BJWin=0
 
  #initialize deck
  makeDeck
@@ -520,12 +564,15 @@ showHand() {
 
 game(){
  preGame
- play
- read -p "Try again? Enter q to quit, anything to try again " input
- case "$input" in
-  [qQ]) exit ;;
-  *) play ;;
- esac
+ while true 
+  do
+    play
+    read -p "Try again? Enter q to quit, anything to try again " input
+    case "$input" in
+      [qQ]) exit ;;
+      *) ;;
+    esac
+  done
 }
 
 game
